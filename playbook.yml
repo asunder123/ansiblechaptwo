@@ -27,12 +27,13 @@
      register: checkmyconf
      check_mode: yes
      ignore_errors: no
-     changed_when: yes 
+     changed_when: no 
    
    - name: apache virtual host on 8082
      lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^<VirutalHost \*:80>" line="<VirtualHost *:8082>" state=present
 
    - name: apache add close tag
+     when: ansible_check_mode
      shell: |
              sudo nano default.conf
              echo "</VirtualHost>">>000-default.conf
