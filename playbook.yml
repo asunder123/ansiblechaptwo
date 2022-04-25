@@ -1,0 +1,54 @@
+---
+- hosts: localhost
+  become: yes
+  tasks:
+   - name: Ensure Apache is installed
+     apt: name=apache2 state=present
+  
+   - name: Stop apache  
+     shell: ./apache2 restart
+     args:
+       chdir: /etc/init.d
+       #shell: ./apache2 restart
+
+     #- name: Restart Apache2
+     #service: 
+        
+     #name: apache2
+     #state : restarted
+
+   - name: apache change to  port 8082
+     lineinfile: dest=/etc/apache2/ports.conf regexp="Listen 8080" line="Listen 8082" state=present
+     #notify:
+     #- restart apache
+
+   - name: Check whether 000-default.conf contains  tag
+     command: grep -Fxq '<VirtualHost *:8082>' /etc/apache2/sites-available/000-default.conf
+     register: checkmyconf
+     check_mode: yes
+     ignore_errors: no
+     changed_when: yes 
+   
+   - name: apache virtual host on 8082
+     lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^<VirutalHost \*:80>" line="<VirtualHost *:8082>" state=present
+
+   - name: apache add close tag
+     shell: |
+             sudo nano default.conf
+             echo "</VirtualHost>">>000-default.conf
+     args:
+      chdir: /etc/apache2/sites-available
+
+   - name: Ensure HTTP is Running
+     service: 
+      name: apache2 
+      #state: started
+      enabled: yes
+
+   - name: Restart web server
+     shell: |
+            ./apache2 stop
+            ./apache2 start
+     args: 
+       chdir: /etc/init.d
+
